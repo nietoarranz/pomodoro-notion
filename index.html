@@ -85,11 +85,19 @@ body.break .btn.primary{background:var(--break)}
   var $=function(i){return document.getElementById(i)};
   var today=new Date().toISOString().slice(0,10);
 
+  var saved=null;
   try{
     var s=JSON.parse(localStorage.getItem('pomo-notion')||'null');
-    if(s && s.day===today) done=s.done||0;
+    if(s && s.day===today) saved=s;
   }catch(e){}
-  function save(){ try{localStorage.setItem('pomo-notion',JSON.stringify({day:today,done:done}))}catch(e){} }
+  if(saved){
+    done=saved.done||0;
+    if(saved.mode==='focus'||saved.mode==='break') mode=saved.mode;
+    if(typeof saved.remaining==='number') remaining=saved.remaining;
+  }
+  function save(){
+    try{localStorage.setItem('pomo-notion',JSON.stringify({day:today,done:done,mode:mode,running:running,endAt:endAt,remaining:remaining}))}catch(e){}
+  }
 
   function fmt(t){var m=Math.floor(t/60), s=t%60; return (m<10?'0':'')+m+':'+(s<10?'0':'')+s}
 
@@ -118,6 +126,7 @@ body.break .btn.primary{background:var(--break)}
     var d=$('dots'); d.innerHTML='';
     for(var i=0;i<Math.min(done,12);i++){var e=document.createElement('span'); e.className='dot on'; d.appendChild(e)}
     document.title=(running?fmt(remaining)+' · ':'')+(mode==='focus'?'Foco':'Descanso');
+    save();
   }
 
   function stop(){running=false; clearInterval(tick); tick=null}
@@ -146,6 +155,17 @@ body.break .btn.primary{background:var(--break)}
   };
   $('tab-focus').onclick=function(){setMode('focus')};
   $('tab-break').onclick=function(){setMode('break')};
+  if(saved && saved.running && saved.endAt){
+    endAt=saved.endAt;
+    remaining=Math.max(0,Math.round((endAt-Date.now())/1000));
+    if(remaining>0){
+      running=true; tick=setInterval(loop,250);
+    } else {
+      // Terminó mientras estabas en otra página
+      if(mode==='focus'){done++; mode='break'} else {mode='focus'}
+      remaining=DUR[mode];
+    }
+  }
   render();
 })();
 </script>
