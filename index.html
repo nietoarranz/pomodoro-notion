@@ -75,6 +75,7 @@ body.break .btn.primary{background:var(--break)}
     <button class="btn primary" id="start">Empezar</button>
     <button class="btn" id="reset">Reiniciar</button>
     <button class="btn" id="skip">Saltar</button>
+    <button class="btn" id="sync" title="Alinea el ciclo con las :00 y las :30">Sincronizar con la hora</button>
   </div>
   <div class="count"><span id="count">0 pomodoros hoy</span><div class="dots" id="dots"></div></div>
 </main>
@@ -152,6 +153,17 @@ body.break .btn.primary{background:var(--break)}
   $('reset').onclick=function(){setMode(mode)};
   $('skip').onclick=function(){
     if(mode==='focus') setMode('break'); else setMode('focus');
+  };
+  $('sync').onclick=function(){
+    stop();
+    var n=new Date();
+    var elapsed=(n.getMinutes()%30)*60000+n.getSeconds()*1000+n.getMilliseconds();
+    var ms;
+    if(elapsed<DUR.focus*1000){ mode='focus'; ms=DUR.focus*1000-elapsed; }
+    else { mode='break'; ms=30*60000-elapsed; }
+    remaining=Math.ceil(ms/1000);
+    running=true; endAt=Date.now()+ms;
+    tick=setInterval(loop,250); render();
   };
   $('tab-focus').onclick=function(){setMode('focus')};
   $('tab-break').onclick=function(){setMode('break')};
